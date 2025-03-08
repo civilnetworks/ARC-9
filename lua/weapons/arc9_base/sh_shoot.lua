@@ -2,11 +2,15 @@ local cancelmults = ARC9.CancelMultipliers[engine.ActiveGamemode()] or ARC9.Canc
 
 local swepGetProcessedValue = SWEP.GetProcessedValue
 
+local WEAPON = FindMetaTable("Weapon")
+local GetNextPrimaryFire = WEAPON.GetNextPrimaryFire
+local GetNextSecondaryFire = WEAPON.GetNextSecondaryFire
+
 function SWEP:StillWaiting()
     local time = CurTime()
 
-    if self:GetNextPrimaryFire() > time then return true end
-    if self:GetNextSecondaryFire() > time then return true end
+    if GetNextPrimaryFire(self) > time then return true end
+    if GetNextSecondaryFire(self) > time then return true end
     if self:GetAnimLockTime() > time then return true end
     if self:GetCycleFinishTime() > time then return true end
     if self:GetPrimedAttack() then return true end

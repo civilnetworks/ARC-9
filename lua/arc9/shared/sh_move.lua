@@ -129,59 +129,59 @@ function ARC9.StartCommand(ply, cmd)
 	
     -- Aim assist imported from ArcCW
     if CLIENT and IsValid(wpn) then
-		local cone = arc9_aimassist_cone:GetFloat()
+		-- local cone = arc9_aimassist_cone:GetFloat()
 		-- local dist = arc9_aimassist_distance:GetFloat() * (wpn:GetProcessedValue("AARangeMult") or 1)
-		local dist = wpn:GetProcessedValue("AimAssistRange", true) or math.min(wpn.RangeMax * 0.95, 4000) -- 4000hu is somewhat about 100m
-		local inte = arc9_aimassist_intensity:GetFloat()
-		local head = arc9_aimassist_head:GetBool()
+		-- local dist = wpn:GetProcessedValue("AimAssistRange", true) or math.min(wpn.RangeMax * 0.95, 4000) -- 4000hu is somewhat about 100m
+		-- local inte = arc9_aimassist_intensity:GetFloat()
+		-- local head = arc9_aimassist_head:GetBool()
 
-		local fav = GetConVar("arc9_mod_freeaim")
-		local far = wpn:GetProcessedValue("FreeAimRadius")
+		-- local fav = GetConVar("arc9_mod_freeaim")
+		-- local far = wpn:GetProcessedValue("FreeAimRadius")
 
-		-- Check if current target is beyond tracking cone
-		local tgt = ply.ARC9_AATarget
-		if IsValid(tgt) and (tgt_pos(tgt, head) - ply:EyePos()):Cross(ply:EyeAngles():Forward()):Length() > cone * 2 then ply.ARC9_AATarget = nil end -- lost track
+		-- -- Check if current target is beyond tracking cone
+		-- local tgt = ply.ARC9_AATarget
+		-- if IsValid(tgt) and (tgt_pos(tgt, head) - ply:EyePos()):Cross(ply:EyeAngles():Forward()):Length() > cone * 2 then ply.ARC9_AATarget = nil end -- lost track
 
-		-- Try to seek target if not exists
-		tgt = ply.ARC9_AATarget
-		if !IsValid(tgt) or (tgt.Health and tgt:Health() <= 0) or util.QuickTrace(ply:EyePos(), tgt_pos(tgt, head) - ply:EyePos(), ply).Entity ~= tgt then
-			local min_diff
-			ply.ARC9_AATarget = nil
-			-- for _, ent in ipairs(ents.FindInCone(ply:EyePos(), ply:EyeAngles():Forward(), 244, math.cos(math.rad(cone)))) do
-			for _, ent in ipairs(ents.FindInCone(ply:EyePos(), ply:EyeAngles():Forward(), dist, math.cos(math.rad(cone + (fav:GetBool() and far or 0))))) do
-				if ent == ply or (!ent:IsNPC() and !ent:IsNextBot() and !ent:IsPlayer()) or ent:Health() <= 0
-						or (ent:IsPlayer() and ent:Team() ~= TEAM_UNASSIGNED and ent:Team() == ply:Team()) then continue end
-				local tr = util.TraceLine({
-					start = ply:EyePos(),
-					endpos = tgt_pos(ent, head),
-					mask = MASK_SHOT,
-					filter = ply
-				})
-				if tr.Entity ~= ent then continue end
-				local diff = (tgt_pos(ent, head) - ply:EyePos()):Cross(ply:EyeAngles():Forward()):Length()
-				if !ply.ARC9_AATarget or diff < min_diff then
-					ply.ARC9_AATarget = ent
-					min_diff = diff
-				end
-			end
-		end
+		-- -- Try to seek target if not exists
+		-- tgt = ply.ARC9_AATarget
+		-- if !IsValid(tgt) or (tgt.Health and tgt:Health() <= 0) or util.QuickTrace(ply:EyePos(), tgt_pos(tgt, head) - ply:EyePos(), ply).Entity ~= tgt then
+		-- 	local min_diff
+		-- 	ply.ARC9_AATarget = nil
+		-- 	-- for _, ent in ipairs(ents.FindInCone(ply:EyePos(), ply:EyeAngles():Forward(), 244, math.cos(math.rad(cone)))) do
+		-- 	for _, ent in ipairs(ents.FindInCone(ply:EyePos(), ply:EyeAngles():Forward(), dist, math.cos(math.rad(cone + (fav:GetBool() and far or 0))))) do
+		-- 		if ent == ply or (!ent:IsNPC() and !ent:IsNextBot() and !ent:IsPlayer()) or ent:Health() <= 0
+		-- 				or (ent:IsPlayer() and ent:Team() ~= TEAM_UNASSIGNED and ent:Team() == ply:Team()) then continue end
+		-- 		local tr = util.TraceLine({
+		-- 			start = ply:EyePos(),
+		-- 			endpos = tgt_pos(ent, head),
+		-- 			mask = MASK_SHOT,
+		-- 			filter = ply
+		-- 		})
+		-- 		if tr.Entity ~= ent then continue end
+		-- 		local diff = (tgt_pos(ent, head) - ply:EyePos()):Cross(ply:EyeAngles():Forward()):Length()
+		-- 		if !ply.ARC9_AATarget or diff < min_diff then
+		-- 			ply.ARC9_AATarget = ent
+		-- 			min_diff = diff
+		-- 		end
+		-- 	end
+		-- end
 
-		-- Aim towards target
-		tgt = ply.ARC9_AATarget
-		if arc9_aimassist:GetBool() and ply:GetInfoNum("arc9_aimassist_cl", 0) == 1 then
-			if IsValid(tgt) and !wpn:GetCustomize() then
-				if !wpn:GetProcessedValue("NoAimAssist", true) then
-					local ang = cmd:GetViewAngles()
-					local pos = tgt_pos(tgt, head)
-					local tgt_ang = (pos - ply:EyePos()):Angle() - (wpn:GetFreeSwayAngles() or angle_zero) - (wpn:GetFreeAimOffset() or angle_zero)
-					local ang_diff = (pos - ply:EyePos()):Cross(ply:EyeAngles():Forward()):Length()
-					if ang_diff > 0.1 then
-						ang = LerpAngle(math.Clamp(inte / ang_diff, 0, 0.1), ang, tgt_ang)
-						cmd:SetViewAngles(ang)
-					end
-				end
-			end
-		end
+		-- -- Aim towards target
+		-- tgt = ply.ARC9_AATarget
+		-- if arc9_aimassist:GetBool() and ply:GetInfoNum("arc9_aimassist_cl", 0) == 1 then
+		-- 	if IsValid(tgt) and !wpn:GetCustomize() then
+		-- 		if !wpn:GetProcessedValue("NoAimAssist", true) then
+		-- 			local ang = cmd:GetViewAngles()
+		-- 			local pos = tgt_pos(tgt, head)
+		-- 			local tgt_ang = (pos - ply:EyePos()):Angle() - (wpn:GetFreeSwayAngles() or angle_zero) - (wpn:GetFreeAimOffset() or angle_zero)
+		-- 			local ang_diff = (pos - ply:EyePos()):Cross(ply:EyeAngles():Forward()):Length()
+		-- 			if ang_diff > 0.1 then
+		-- 				ang = LerpAngle(math.Clamp(inte / ang_diff, 0, 0.1), ang, tgt_ang)
+		-- 				cmd:SetViewAngles(ang)
+		-- 			end
+		-- 		end
+		-- 	end
+		-- end
     end
 	
     if wpn:GetBipod() then
@@ -236,9 +236,9 @@ function ARC9.StartCommand(ply, cmd)
         cmd:SetViewAngles(eyeang)
     end
 
-    if wpn:GetProcessedValue("NoSprintWhenLocked", true) and wpn:GetAnimLockTime() > CurTime() then
-        cmd:RemoveKey(IN_SPEED)
-    end
+    -- if wpn:GetProcessedValue("NoSprintWhenLocked", true) and wpn:GetAnimLockTime() > CurTime() then
+    --     cmd:RemoveKey(IN_SPEED)
+    -- end
 
     if wpn.InertiaEnabled then
         wpn.InertiaSideMoveRaw = cmd:GetSideMove() * 0.0015
@@ -318,7 +318,7 @@ function ARC9.StartCommand(ply, cmd)
 
         ARC9.RecoilRise = ARC9.RecoilRise + Angle(diff_p, diff_y, 0)
 
-        local recreset = ARC9.RecoilRise * wpn:GetProcessedValue("RecoilAutoControl") * cft * 2
+        local recreset = ARC9.RecoilRise * 1/*wpn:GetProcessedValue("RecoilAutoControl")*/ * cft * 2
 
         if math.abs(recreset.p) > 1e-5 then
             eyeang.p = eyeang.p - recreset.p

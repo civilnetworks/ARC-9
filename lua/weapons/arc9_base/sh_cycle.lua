@@ -1,20 +1,33 @@
+
+local PLAYER = FindMetaTable("Player")
+local KeyDown = PLAYER.KeyDown
+
 function SWEP:ThinkCycle()
-    if self:GetNeedsCycle() and self:GetCycleFinishTime() != 0 and self:GetCycleFinishTime() <= CurTime() then
-        self:SetNeedsCycle(false)
-        self:SetCycleFinishTime(0)
+    local needsCycle = self:GetNeedsCycle()
+
+    if needsCycle then
+        local cycleFinishTime = self:GetCycleFinishTime()
+
+        if cycleFinishTime != 0 and cycleFinishTime <= CurTime() then
+            self:SetNeedsCycle(false)
+            self:SetCycleFinishTime(0)
+        end
     end
+
     if self:StillWaiting() then return end
     local owner = self:GetOwner()
 
     local manual = self:ShouldManualCycle()
 
-    local cycling = !owner:KeyDown(IN_ATTACK)
+    local cycling = nil
 
     if manual then
-        cycling = owner:KeyDown(IN_RELOAD)
+        cycling = KeyDown(owner, IN_RELOAD)
+    else
+        cycling = !KeyDown(owner, IN_ATTACK)
     end
 
-    if self:GetNeedsCycle() and (cycling or self:GetProcessedValue("SlamFire", true)) then
+    if needsCycle and (cycling or self:GetProcessedValue("SlamFire", true)) then
 
         if self.MalfunctionCycle and (IsFirstTimePredicted() and self:RollJam()) then return end
 

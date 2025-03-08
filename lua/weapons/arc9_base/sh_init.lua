@@ -8,6 +8,8 @@ local arc9_precache_wepmodels_onfirsttake = GetConVar("arc9_precache_wepmodels_o
 local arc9_precache_attsmodels_onfirsttake = GetConVar("arc9_precache_attsmodels_onfirsttake")
 
 function SWEP:Initialize()
+    self:PV_Initialize()
+    
     local owner = self:GetOwner()
 
     self.HoldTypeDefault = self.HoldType
@@ -225,4 +227,6 @@ function SWEP:OnRemove()
     if SERVER then
         self:KillShield()
     end
+
+    self:PV_Remove()
 end
