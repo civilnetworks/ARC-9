@@ -1,3 +1,10 @@
+
+local PLAYER = FindMetaTable("Player")
+local GetInfoNum = PLAYER.GetInfoNum
+
+local ENTITY = FindMetaTable("Entity")
+local GetOwner = ENTITY.GetOwner
+
 function SWEP:GetSightDelta()
     return self:GetSightAmount()
 end
@@ -12,8 +19,8 @@ function SWEP:EnterSights()
     if self:GetSafe() then return end
     if self.SightsInterruptInspect and self:GetInspecting() then self:CancelInspect() end
     if self:GetAnimLockTime() > CurTime() and !self:GetReloading() then return end -- i hope this won't cause any issues later
-    if self:GetValue("UBGL") and self:GetOwner():KeyDown(IN_USE) then return end
-    if self:GetIsNearWall() then return end
+    if self:GetValue("UBGL") and GetOwner(self):KeyDown(IN_USE) then return end
+    -- if self:GetIsNearWall() then return end
 	if self:HasAnimation("bash") and self.SetNextAiming then
 		if self.SetNextAiming > CurTime() then return end
 	end
@@ -82,7 +89,7 @@ function SWEP:ExitSights()
 end
 
 function SWEP:ToggleADS()
-    return self:GetOwner():GetInfoNum("arc9_toggleads", 0) >= 1
+    return GetInfoNum(GetOwner(self), "arc9_toggleads", 0) >= 1
 end
 
 SWEP.MultiSightTable = {
@@ -299,15 +306,19 @@ do
         end
 
         local oldamt = swepDt.SightAmount
-        local amt = math.Approach(
-            oldamt, sighted and 1 or 0, FrameTime() / self:GetProcessedValue("AimDownSightsTime"))
+        local target = sighted and 1 or 0
+        local amt = oldamt
+
+        if (amt != target) then
+            amt = math.Approach(oldamt, sighted and 1 or 0, FrameTime() / self:GetProcessedValue("AimDownSightsTime"))
+        end
 
         if oldamt ~= amt then
             self:SetSightAmount(amt)
         end
 
         local owner = entityGetOwner(self)
-        local toggle = swepToggleADS(self)
+        local toggle = GetInfoNum(owner, "arc9_toggleads", 0) >= 1--swepToggleADS(self)
         local inatt = playerKeyDown(owner, IN_ATTACK2)
         local pratt = playerKeyPressed(owner, IN_ATTACK2)
 
@@ -376,15 +387,16 @@ local arc9_cheapscopes = GetConVar("arc9_cheapscopes")
 
 function SWEP:GetRTScopeFOV()
     local sights = self:GetSight()
-    
-    if !sights then return self:GetOwner():GetFOV() end
+    local owner = GetOwner(self)
+
+    if !sights then return owner:GetFOV() end
 
     local realzoom = self:GetRealZoom(sights)
 
     local ratio = ((sights.atttbl and sights.atttbl.ScopeScreenRatio or self.ScopeScreenRatio) or 0.5) - (!self.ExtraSightDistanceNoRT and sights.ExtraSightDistance or 0) * 0.045
     if self.PeekingIsSight and self.Peeking then ratio = ratio + 0.2 end
     local vmfovratio = arc9_cheapscopes:GetBool() and sights.Magnification or self:GetSmoothedFOVMag() -- sights.Magnification
-    local funnyfov = self:ScaleFOVByWidthRatio(self:GetOwner():GetFOV(), 1 / vmfovratio * ratio / 1.5 / realzoom)
+    local funnyfov = self:ScaleFOVByWidthRatio(owner:GetFOV(), 1 / vmfovratio * ratio / 1.5 / realzoom)
 
     return funnyfov
 end
@@ -392,7 +404,7 @@ end
 SWEP.ScrollLevels = {}
 
 function SWEP:Scroll(amt)
-    if self:GetOwner():KeyDown(IN_USE) then return end
+    if GetOwner(self):KeyDown(IN_USE) then return end
     local sights = self:GetSight() or {}
 
     local atttbl = sights.atttbl

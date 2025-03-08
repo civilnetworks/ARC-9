@@ -1,6 +1,10 @@
 
 local PLAYER = FindMetaTable("Player")
 local KeyDown = PLAYER.KeyDown
+local GetInfoNum = PLAYER.GetInfoNum
+
+local ENTITY = FindMetaTable("Entity")
+local GetOwner = ENTITY.GetOwner
 
 function SWEP:ThinkCycle()
     local needsCycle = self:GetNeedsCycle()
@@ -52,5 +56,5 @@ function SWEP:ThinkCycle()
 end
 
 function SWEP:ShouldManualCycle()
-    return self:GetOwner():GetInfoNum("arc9_manualbolt", 0) >= 1
+    return GetInfoNum(GetOwner(self), "arc9_manualbolt", 0) >= 1
 end
