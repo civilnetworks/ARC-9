@@ -313,11 +313,6 @@ do
     local smolnumber = 1e-5
 
     function SWEP:ThinkRecoil()
-        -- TODO: More accurate time until pause recoil think
-        if (CurTime() - self.LastPrimaryAttack > 4) then
-            return
-        end
-
         local dt = self.dt
         local ru = dt.RecoilUp
         local rs = dt.RecoilSide

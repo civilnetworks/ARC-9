@@ -5,9 +5,10 @@ local KeyDown = PLAYER.KeyDown
 local ENTITY = FindMetaTable("Entity")
 local GetMoveType = ENTITY.GetMoveType
 local OnGround = ENTITY.OnGround
+local GetOwner = ENTITY.GetOwner
 
 function SWEP:GetSprintToFireTime()
-    local owner = self:GetOwner()
+    local owner = GetOwner(self)
     local slidingmult = (owner.GetSliding and owner:GetSliding()) and 0.66 or 1
     return self:GetProcessedValue("SprintToFireTime", true) * slidingmult -- Incorrectly uses a time as a multiplier! Preserved for legacy behavior
 end
@@ -24,7 +25,7 @@ function SWEP:GetIsSprinting()
 end
 
 function SWEP:GetIsWalking()
-    local owner = self:GetOwner()
+    local owner = GetOwner(self)
 
     if !owner:IsValid() or owner:IsNPC() then
         return false
@@ -40,7 +41,7 @@ function SWEP:GetIsWalking()
 end
 
 function SWEP:GetIsSprintingCheck()
-    local owner = self:GetOwner()
+    local owner = GetOwner(self)
 
     if !owner:IsValid() or owner:IsNPC() then
         return false

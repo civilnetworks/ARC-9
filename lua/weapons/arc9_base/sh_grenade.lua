@@ -1,5 +1,5 @@
 function SWEP:ThinkGrenade()
-    if !self:GetProcessedValue("Throwable", true) then return end
+    if (not self.Throwable) then return end--if !self:GetProcessedValue("Throwable", true) then return end
     local owner = self:GetOwner()
 
     owner.ARC9QuickthrowPls = nil 

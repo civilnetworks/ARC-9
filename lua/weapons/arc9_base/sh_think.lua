@@ -65,6 +65,10 @@ function SWEP:Think()
 
     local shouldRunPredicted = not self:PredictionFilter()
 
+    -- TODO: More accurate time until dormant
+    local isDormant = CurTime() - self.LastPrimaryAttack > 4
+    local isDormantADS = CurTime() - self.LastScopedOutTime > 1
+
     if not self.NotAWeapon then
         local notPressedAttack = not playerKeyDown(owner, IN_ATTACK)
 
@@ -175,14 +179,19 @@ function SWEP:Think()
             self:ThinkGrenade()
             self:ThinkTriggerSounds()
         end
-        -- Done
-        self:ThinkRecoil()
-        self:ThinkHoldBreath()
-        --self:ThinkLockOn()
+        
+        if (not isDormant) then
+            self:ThinkRecoil()
+        end
+
+        if (not isDormantADS) then
+            self:ThinkHoldBreath()
+            --self:ThinkLockOn()
+        end
     end
 
     if shouldRunPredicted then
-        swepThinkLean(self)
+        -- swepThinkLean(self)
         swepThinkFiremodes(self)
         swepThinkInspect(self)
     end

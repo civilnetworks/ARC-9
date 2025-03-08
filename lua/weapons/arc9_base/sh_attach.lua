@@ -1,5 +1,12 @@
 SWEP.CustomizeDelta = 0
 
+local ENTITY = FindMetaTable("Entity")
+local GetOwner = ENTITY.GetOwner
+
+local PLAYER = FindMetaTable("Player")
+local KeyPressed = PLAYER.KeyPressed
+local KeyDown = PLAYER.KeyDown  
+
 function SWEP:Attach(addr, att, silent)
     local slottbl = self:LocateSlotFromAddress(addr)
     if !slottbl then -- to not error and reset menu
@@ -209,9 +216,9 @@ function SWEP:PostModify(toggleonly)
 end
 
 function SWEP:ThinkCustomize()
-    local owner = self:GetOwner()
+    local owner = GetOwner(self)
 
-    if owner:KeyPressed(ARC9.IN_CUSTOMIZE) and !owner:KeyDown(IN_USE) and !self:GetGrenadePrimed() then
+    if KeyPressed(owner, ARC9.IN_CUSTOMIZE) and !KeyDown(owner, IN_USE) and !self:GetGrenadePrimed() then
         self:ToggleCustomize(!self:GetCustomize())
     end
 

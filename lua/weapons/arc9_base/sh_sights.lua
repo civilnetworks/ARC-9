@@ -26,6 +26,7 @@ function SWEP:EnterSights()
 	end
 	
     -- self:ToggleBlindFire(false)
+    self.LastScopedOutTime = math.huge
     self:SetInSights(true)
     if IsFirstTimePredicted() then
         local soundtab1 = {
@@ -57,6 +58,7 @@ end
 
 function SWEP:ExitSights()
     if self:GetInSights() then
+        self.LastScopedOutTime = CurTime()
         self:SetInSights(false)
 
         if IsFirstTimePredicted() then

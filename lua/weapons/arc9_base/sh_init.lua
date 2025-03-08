@@ -10,6 +10,7 @@ local arc9_precache_attsmodels_onfirsttake = GetConVar("arc9_precache_attsmodels
 function SWEP:Initialize()
     self:PV_Initialize()
     self.LastPrimaryAttack = 0
+    self.LastScopedOutTime = 0
     
     local owner = self:GetOwner()
 

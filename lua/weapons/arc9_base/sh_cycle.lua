@@ -5,23 +5,26 @@ local GetInfoNum = PLAYER.GetInfoNum
 
 local ENTITY = FindMetaTable("Entity")
 local GetOwner = ENTITY.GetOwner
+local GetTable = ENTITY.GetTable
 
 function SWEP:ThinkCycle()
-    local needsCycle = self:GetNeedsCycle()
+    local entityTbl = GetTable(self)
+
+    local needsCycle = entityTbl.GetNeedsCycle(self)
 
     if needsCycle then
-        local cycleFinishTime = self:GetCycleFinishTime()
+        local cycleFinishTime = entityTbl.GetCycleFinishTime(self)
 
         if cycleFinishTime != 0 and cycleFinishTime <= CurTime() then
-            self:SetNeedsCycle(false)
-            self:SetCycleFinishTime(0)
+            entityTbl.SetNeedsCycle(self, false)
+            entityTbl.SetCycleFinishTime(self, 0)
         end
     end
 
-    if self:StillWaiting() then return end
-    local owner = self:GetOwner()
+    if entityTbl.StillWaiting(self) then return end
+    local owner = GetOwner(self)
 
-    local manual = self:ShouldManualCycle()
+    local manual = entityTbl.ShouldManualCycle(self)
 
     local cycling = nil
 
@@ -31,19 +34,19 @@ function SWEP:ThinkCycle()
         cycling = !KeyDown(owner, IN_ATTACK)
     end
 
-    if needsCycle and (cycling or self:GetProcessedValue("SlamFire", true)) then
+    if needsCycle and (cycling or entityTbl.GetProcessedValue(self, "SlamFire", true)) then
 
-        if self.MalfunctionCycle and (IsFirstTimePredicted() and self:RollJam()) then return end
+        if entityTbl.MalfunctionCycle and (IsFirstTimePredicted() and entityTbl.RollJam(self)) then return end
 
-        local ejectdelay = self:GetProcessedValue("EjectDelay", true)
+        local ejectdelay = entityTbl.GetProcessedValue(self, "EjectDelay", true)
 
-        local t = self:PlayAnimation("cycle", self:GetProcessedValue("CycleTime", true), false)
+        local t = self:PlayAnimation("cycle", entityTbl.GetProcessedValue(self, "CycleTime", true), false)
 
-        t = t * ((self:GetAnimationEntry(self:TranslateAnimation("cycle")) or {}).MinProgress or 1)
+        t = t * ((entityTbl.GetAnimationEntry(self, entityTbl.TranslateAnimation(self, "cycle")) or {}).MinProgress or 1)
 
-        self:SetCycleFinishTime(CurTime() + t)
+        entityTbl.SetCycleFinishTime(self, CurTime() + t)
 
-        if IsFirstTimePredicted() and !self:GetProcessedValue("NoShellEjectManualAction", true) then
+        if IsFirstTimePredicted() and !entityTbl.GetProcessedValue(self, "NoShellEjectManualAction", true) then
             if ejectdelay == 0 then
                 self:DoEject()
             else
