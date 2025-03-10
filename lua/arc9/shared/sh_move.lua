@@ -1,6 +1,13 @@
 ARC9.LastEyeAngles = Angle(0, 0, 0)
 ARC9.RecoilRise = Angle(0, 0, 0)
 
+local cos = math.cos
+local sin = math.sin
+local exp = math.exp
+local Clamp = math.Clamp
+local abs = math.abs
+local tiny = 1e-5
+
 function ARC9.Move(ply, mv, cmd)
     local wpn = ply:GetActiveWeapon()
 
@@ -70,7 +77,7 @@ ARC9.ClientRecoilProgress = 0
 local ARC9_cheapscopes = GetConVar("ARC9_cheapscopes")
 
 local function approxEqualsZero(a)
-    return math.abs(a) < 0.0001
+    return abs(a) < 0.0001
 end
 
 local function tgt_pos(ent, head) -- From ArcCW
@@ -91,6 +98,7 @@ local arc9_aimassist = GetConVar("arc9_aimassist")
 local arc9_aimassist_lockon = GetConVar("arc9_aimassist_lockon")
 local arc9_aimassist_moving = GetConVar("arc9_aimassist_moving")
 local arc9_aimassist_grounded = GetConVar("arc9_aimassist_grounded")
+local angZero = Angle(0, 0, 0)
 
 function ARC9.StartCommand(ply, cmd)
     if !IsValid(ply) or cmd:CommandNumber() == 0 then return end
@@ -147,8 +155,8 @@ function ARC9.StartCommand(ply, cmd)
 		-- if !IsValid(tgt) or (tgt.Health and tgt:Health() <= 0) or util.QuickTrace(ply:EyePos(), tgt_pos(tgt, head) - ply:EyePos(), ply).Entity ~= tgt then
 		-- 	local min_diff
 		-- 	ply.ARC9_AATarget = nil
-		-- 	-- for _, ent in ipairs(ents.FindInCone(ply:EyePos(), ply:EyeAngles():Forward(), 244, math.cos(math.rad(cone)))) do
-		-- 	for _, ent in ipairs(ents.FindInCone(ply:EyePos(), ply:EyeAngles():Forward(), dist, math.cos(math.rad(cone + (fav:GetBool() and far or 0))))) do
+		-- 	-- for _, ent in ipairs(ents.FindInCone(ply:EyePos(), ply:EyeAngles():Forward(), 244, cos(math.rad(cone)))) do
+		-- 	for _, ent in ipairs(ents.FindInCone(ply:EyePos(), ply:EyeAngles():Forward(), dist, cos(math.rad(cone + (fav:GetBool() and far or 0))))) do
 		-- 		if ent == ply or (!ent:IsNPC() and !ent:IsNextBot() and !ent:IsPlayer()) or ent:Health() <= 0
 		-- 				or (ent:IsPlayer() and ent:Team() ~= TEAM_UNASSIGNED and ent:Team() == ply:Team()) then continue end
 		-- 		local tr = util.TraceLine({
@@ -176,7 +184,7 @@ function ARC9.StartCommand(ply, cmd)
 		-- 			local tgt_ang = (pos - ply:EyePos()):Angle() - (wpn:GetFreeSwayAngles() or angle_zero) - (wpn:GetFreeAimOffset() or angle_zero)
 		-- 			local ang_diff = (pos - ply:EyePos()):Cross(ply:EyeAngles():Forward()):Length()
 		-- 			if ang_diff > 0.1 then
-		-- 				ang = LerpAngle(math.Clamp(inte / ang_diff, 0, 0.1), ang, tgt_ang)
+		-- 				ang = LerpAngle(Clamp(inte / ang_diff, 0, 0.1), ang, tgt_ang)
 		-- 				cmd:SetViewAngles(ang)
 		-- 			end
 		-- 		end
@@ -218,13 +226,13 @@ function ARC9.StartCommand(ply, cmd)
         
         if wpn:GetOutOfBreath() then swayspeed = 2.25 end
 
-        local swayang = Angle(math.sin(ct * 0.6 * swayspeed) + (math.cos(ct * 2 * swayspeed) * 0.5), math.sin(ct * 0.4 * swayspeed) + (math.cos(ct * 1.6 * swayspeed) * 0.5), 0)
+        local swayang = Angle(sin(ct * 0.6 * swayspeed) + (cos(ct * 2 * swayspeed) * 0.5), sin(ct * 0.4 * swayspeed) + (cos(ct * 1.6 * swayspeed) * 0.5), 0)
         
-        swayang.p = swayang.p + (math.cos(ct * 5 * swayspeed) + math.cos(ct * 2)) * -0.15 -- smaller movement
-        swayang.y = swayang.y + (math.cos(ct * 2.9 * swayspeed) + (math.sin(ct * 7.1)) - (math.sin(ct * 4) * 2)) * 0.1
+        swayang.p = swayang.p + (cos(ct * 5 * swayspeed) + cos(ct * 2)) * -0.15 -- smaller movement
+        swayang.y = swayang.y + (cos(ct * 2.9 * swayspeed) + (sin(ct * 7.1)) - (sin(ct * 4) * 2)) * 0.1
 
-        swayang.p = swayang.p - math.exp(math.exp((math.cos(ct * 1.33 * swayspeed)))) * -0.07 -- random drags
-        swayang.y = swayang.y - math.exp(math.exp((math.sin(ct * 0.8 * swayspeed)))) * 0.07
+        swayang.p = swayang.p - exp(exp((cos(ct * 1.33 * swayspeed)))) * -0.07 -- random drags
+        swayang.y = swayang.y - exp(exp((sin(ct * 0.8 * swayspeed)))) * 0.07
 
         swayang = swayang * wpn:GetSightAmount() * swayamt * 0.2 * 0.75
 
@@ -260,16 +268,16 @@ function ARC9.StartCommand(ply, cmd)
             -- 0 can be negative or positive!!!!! Insane
             if approxEqualsZero(recrise.p) then
             elseif recrise.p > 0 then
-                recrise.p = math.Clamp(recrise.p, 0, recrise.p - diff.p)
+                recrise.p = Clamp(recrise.p, 0, recrise.p - diff.p)
             elseif recrise.p < 0 then
-                recrise.p = math.Clamp(recrise.p, recrise.p - diff.p, 0)
+                recrise.p = Clamp(recrise.p, recrise.p - diff.p, 0)
             end
 
             if approxEqualsZero(recrise.y) then
             elseif recrise.y > 0 then
-                recrise.y = math.Clamp(recrise.y, 0, recrise.y - diff.y)
+                recrise.y = Clamp(recrise.y, 0, recrise.y - diff.y)
             elseif recrise.y < 0 then
-                recrise.y = math.Clamp(recrise.y, recrise.y - diff.y, 0)
+                recrise.y = Clamp(recrise.y, recrise.y - diff.y, 0)
             end
         end
 
@@ -305,11 +313,11 @@ function ARC9.StartCommand(ply, cmd)
 
         ARC9.ClientRecoilProgress = ARC9.ClientRecoilProgress + progress
 
-        if math.abs(ARC9.ClientRecoilUp) > 1e-5 then
+        if abs(ARC9.ClientRecoilUp) > 1e-5 then
             eyeang.p = eyeang.p + ARC9.ClientRecoilUp * m * cft / ARC9.RecoilTimeStep
         end
 
-        if math.abs(ARC9.ClientRecoilSide) > 1e-5 then
+        if abs(ARC9.ClientRecoilSide) > 1e-5 then
             eyeang.y = eyeang.y + ARC9.ClientRecoilSide * m * cft / ARC9.RecoilTimeStep
         end
 
@@ -318,13 +326,19 @@ function ARC9.StartCommand(ply, cmd)
 
         ARC9.RecoilRise = ARC9.RecoilRise + Angle(diff_p, diff_y, 0)
 
-        local recreset = ARC9.RecoilRise * 1/*wpn:GetProcessedValue("RecoilAutoControl")*/ * cft * 2
+        local recoilControl = 1
 
-        if math.abs(recreset.p) > 1e-5 then
+        if (abs(diff_p) > tiny or abs(diff_y) > tiny) then
+            recoilControl = wpn:GetProcessedValue("RecoilAutoControl")
+        end
+
+        local recreset = ARC9.RecoilRise * recoilControl * cft * 2
+
+        if abs(recreset.p) > 1e-5 then
             eyeang.p = eyeang.p - recreset.p
         end
 
-        if math.abs(recreset.y) > 1e-5 then
+        if abs(recreset.y) > 1e-5 then
             eyeang.y = eyeang.y - recreset.y
         end
 
