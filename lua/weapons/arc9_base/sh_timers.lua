@@ -51,11 +51,13 @@ function SWEP:ProcessTimers()
     local keeptimers = {}
     local UCT = CurTime()
 
-    if !self.ActiveTimers then
+    local timers = self.ActiveTimers
+    if not timers then
         self:InitTimers()
+        timers = self.ActiveTimers
     end
 
-    for _, v in pairs(self.ActiveTimers) do
+    for _, v in pairs(timers) do
         if v[1] <= UCT then
             v[3]()
         else

@@ -1,13 +1,19 @@
+
+local PLAYER = FindMetaTable("Player")
+local KeyPressed = PLAYER.KeyPressed
+
+local ENTITY = FindMetaTable("Entity")
+local GetOwner = ENTITY.GetOwner
+
 function SWEP:ThinkBipod()
     local bip = self:GetBipod()
-    local owner = self:GetOwner()
 
     if bip then
-        if owner:KeyDown(IN_BACK) or self:MustExitBipod() then
+        if KeyDown(GetOwner(self), IN_BACK) or self:MustExitBipod() then
             self:ExitBipod()
         end
     else
-        if owner:KeyPressed(IN_ATTACK2) and self:CanBipod() then
+        if KeyPressed(GetOwner(self), IN_ATTACK2) and self:CanBipod() then
             self:EnterBipod()
         end
     end

@@ -2,15 +2,24 @@ local cancelmults = ARC9.CancelMultipliers[engine.ActiveGamemode()] or ARC9.Canc
 
 local swepGetProcessedValue = SWEP.GetProcessedValue
 
+local WEAPON = FindMetaTable("Weapon")
+local GetNextPrimaryFire = WEAPON.GetNextPrimaryFire
+local GetNextSecondaryFire = WEAPON.GetNextSecondaryFire
+
+local ENTITY = FindMetaTable("Entity")
+local GetTable = ENTITY.GetTable
+
 function SWEP:StillWaiting()
     local time = CurTime()
 
-    if self:GetNextPrimaryFire() > time then return true end
-    if self:GetNextSecondaryFire() > time then return true end
-    if self:GetAnimLockTime() > time then return true end
-    if self:GetCycleFinishTime() > time then return true end
-    if self:GetPrimedAttack() then return true end
-    if self:GetHolsterTime() > 0 then return true end
+    if GetNextPrimaryFire(self) > time then return true end
+    if GetNextSecondaryFire(self) > time then return true end
+
+    local tbl = GetTable(self)
+    if tbl.GetAnimLockTime(self) > time then return true end
+    if tbl.GetCycleFinishTime(self) > time then return true end
+    if tbl.GetPrimedAttack(self) then return true end
+    if tbl.GetHolsterTime(self) > 0 then return true end
 
     return false
 end
@@ -19,7 +28,7 @@ function SWEP:SprintLock()
     if self:GetSprintAmount() > 0 then return true end
     -- if self:GetTraversalSprintAmount() > 0 then retur    n true end
     -- if self:GetIsSprinting() then return true end
-    if self:GetIsNearWall() then return true end
+    -- if self:GetIsNearWall() then return true end
 
     return false
 end
@@ -344,6 +353,8 @@ function SWEP:DoPrimaryAttack()
     if self.FireInterruptInspect and self:GetInspecting() then self:CancelInspect() end
     if self:StillWaiting() then return end
     if self.NoFireDuringSighting and (self:GetInSights() and self:GetSightAmount() < 0.8 or false) then return end
+
+    self.LastPrimaryAttack = CurTime()
 
     local currentFiremode = self:GetCurrentFiremode()
     local burstCount = self:GetBurstCount()

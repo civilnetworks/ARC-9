@@ -22,6 +22,10 @@ do
     local engineTickCount = engine.TickCount
 
     function SWEP:GetIsNearWall()
+        if (true) then
+            return false
+        end
+        
         local now = engineTickCount()
 
         if self.NearWallTick == now then return self.NearWallCached end

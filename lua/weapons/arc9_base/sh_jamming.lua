@@ -1,7 +1,7 @@
 local arc9_mod_overheat = GetConVar("arc9_mod_overheat")
 
 function SWEP:RollJam()
-    if !self:GetProcessedValue("Malfunction", true) then return end
+    if !self:IsMalfunctioning() then return end
     if self:Clip1() == 0 and self.MalfunctionNeverLastShoot then return end
 
     local chance = 1 / self:GetProcessedValue("MalfunctionMeanShotsToFail")
@@ -29,8 +29,23 @@ function SWEP:RollJam()
     end
 end
 
+function SWEP:IsMalfunctioning()
+    if (self.dt.Jammed) then
+        return true
+    end
+
+    return false--self:GetProcessedValue("Malfunction", true)
+end
+
+function SWEP:IsOverheating()
+    if (self.dt.HeatLockout) then
+        return true
+    end
+    return false--self:IsOverheating()
+end
+
 function SWEP:DoHeat()
-    if !arc9_mod_overheat:GetBool() or !self:GetProcessedValue("Overheat", true) then return end
+    if !arc9_mod_overheat:GetBool() or !self:IsOverheating() then return end
 
     self:SetHeatAmount(self:GetHeatAmount() + self:GetProcessedValue("HeatPerShot", true))
 
@@ -80,7 +95,7 @@ function SWEP:ThinkHeat(dt)
 
     if heat <= 0 then return end
 
-    -- if !self:GetProcessedValue("Overheat", true) then return end
+    -- if !self:IsOverheating() then return end
 
     if self:GetNextPrimaryFire() + self:GetProcessedValue("HeatDelayTime", true) < CurTime() then
         heat = heat - (dt * self:GetProcessedValue("HeatDissipation"))

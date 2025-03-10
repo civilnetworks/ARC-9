@@ -1,4 +1,6 @@
 local ENTITY = FindMetaTable("Entity")
+local entityGetTable = ENTITY.GetTable
+
 SWEP.StatCache = {}
 SWEP.HookCache = {}
 SWEP.AffectorsCache = nil
@@ -31,7 +33,8 @@ local singleplayer = game.SinglePlayer()
 local ARC9HeatCapacityGPVOverflow = false
 
 function SWEP:ClearLongCache()
-    for _, v in pairs(self.PV_CacheLong) do v.time = 0 end
+    local pvData = ARC9.PV_Data[self]
+    for _, v in pairs(pvData.PV_CacheLong) do v.time = 0 end
 end
 
 function SWEP:InvalidateCache()
@@ -51,6 +54,10 @@ function SWEP:InvalidateCache()
     -- self.ScrollLevels = {} -- moved to PostModify
     self.HasNoAffectors = {}
     self:SetBaseSettings()
+
+    local pvData = ARC9.PV_Data[self]
+    pvData.PV_Cache = {}
+    pvData.PV_CacheLong = {}
 end
 
 function SWEP:GetFinalAttTableFromAddress(address)
@@ -79,7 +86,6 @@ function SWEP:GetFinalAttTable(slot)
 end
 
 do
-    local entityGetTable = ENTITY.GetTable
     -- local swepGetCurrentFiremodeTable = SWEP.GetCurrentFiremodeTable
     local swepGetElements = SWEP.GetElements
     local swepGetFinalAttTable = SWEP.GetFinalAttTable
@@ -251,12 +257,30 @@ end
 -- local pv_move = 0
 -- local pv_shooting = 0
 -- local pv_melee = 0
-SWEP.PV_Tick = 0
-SWEP.PV_Move = 0
-SWEP.PV_Shooting = 0
-SWEP.PV_Melee = 0
-SWEP.PV_Cache = {}
-SWEP.PV_CacheLong = {}
+
+ARC9.PV_Data = ARC9.PV_Data or {}
+
+function SWEP:PV_Initialize()
+    ARC9.PV_Data[self] = {
+        PV_Tick = 0,
+        PV_Move = 0,
+        PV_Shooting = 0,
+        PV_Melee = 0,
+        PV_Cache = {},
+        PV_CacheLong = {},
+    }
+end
+
+function SWEP:PV_Remove()
+    ARC9.PV_Data[self] = nil
+end
+
+-- SWEP.PV_Tick = 0
+-- SWEP.PV_Move = 0
+-- SWEP.PV_Shooting = 0
+-- SWEP.PV_Melee = 0
+-- SWEP.PV_Cache = {}
+-- SWEP.PV_CacheLong = {}
 
 do
     local swepRunHook = SWEP.RunHook
@@ -269,15 +293,19 @@ do
         condition = condition or ""
         amount = amount or 1
         local stat = base
+        local entityTable = entityGetTable(self)
 
         if stat == nil then
-            stat = self:GetTable()[val]
+            stat = entityTable[val]
         end
 
         local valContCondition = val .. condition
-        if self.HasNoAffectors[valContCondition] == true then
+        local HasNoAffectors = entityTable.HasNoAffectors
+
+        if HasNoAffectors[valContCondition] == true then
             return stat
         end
+
         local unaffected = true
         local baseStr = tostring(base)
         -- damn
@@ -287,11 +315,10 @@ do
             stat.BaseClass = nil
         end
 
-        local statCache = self.StatCache
+        local statCache = entityTable.StatCache
         local cacheAvailable = statCache[baseContValContCondition]
 
         if cacheAvailable ~= nil then
-            -- stat = self.StatCache[tostring(base) .. valContCondition]
             stat = cacheAvailable
             local oldstat = stat
             stat = swepRunHook(self, val .. "Hook" .. condition, stat)
@@ -299,9 +326,6 @@ do
             if stat == nil then
                 stat = oldstat
             end
-            -- if istable(stat) then
-            --     stat.BaseClass = nil
-            -- end
             
             if quickmodifiers[val] and isnumber(stat) then
                 local convarvalue = quickmodifiers[val]:GetFloat()
@@ -320,7 +344,7 @@ do
         local allAffectors = swepGetAllAffectors(self)
         local affectorsCount = #allAffectors
 
-        if not self.ExcludeFromRawStats[val] then
+        if not entityTable.ExcludeFromRawStats[val] then
             for i = 1, affectorsCount do
                 local tbl = allAffectors[i]
                 if !tbl then continue end
@@ -353,9 +377,6 @@ do
                 local keyName = val .. "Add" .. condition
 
                 if tbl[keyName] ~= nil then
-                    -- if !pcall(function() stat = stat + (tbl[val .. "Add" .. condition] * amount) end) then
-                    --     print("!!! ARC9 ERROR - \"" .. (tbl["PrintName"] or "Unknown") .. "\" TRIED TO ADD INVALID VALUE: (" .. tbl[val .. "Add" .. condition] .. ") TO " .. val .. "!")
-                    -- end
                     if type(tbl[keyName]) == type(stat) then
                         stat = stat + (tbl[keyName] * amount)
                     end
@@ -369,9 +390,6 @@ do
                 local keyName = val .. "Mult" .. condition
 
                 if tbl[keyName] ~= nil then
-                    -- if !pcall(function() stat = stat * math.pow(tbl[val .. "Mult" .. condition], amount) end) then
-                    --     print("!!! ARC9 ERROR - \"" .. (tbl["PrintName"] or "Unknown") .. "\" TRIED TO MULTIPLY INVALID VALUE: (" .. tbl[val .. "Add" .. condition] .. ") TO " .. val .. "!")
-                    -- end
                     if type(tbl[keyName]) == type(stat) then
                         if amount > 1 then
                             stat = stat * math.pow(tbl[keyName], amount)
@@ -385,10 +403,12 @@ do
             end
         end
 
-        if not self.DynamicConditions[condition] then
+        local cond = entityTable.DynamicConditions[condition]
+
+        if not cond then
             statCache[baseContValContCondition] = stat
         end
-        -- self.StatCache[tostring(base) .. valContCondition] = stat
+
         local newstat, any = swepRunHook(self, val .. "Hook" .. condition, stat)
         stat = newstat or stat
 
@@ -408,11 +428,10 @@ do
             unaffected = false
         end
 
-        if not self.DynamicConditions[condition] then
-            self.HasNoAffectors[valContCondition] = unaffected
+        if not cond then
+            HasNoAffectors[valContCondition] = unaffected
         end
 
-        -- if statType == 'table' then
         if type(stat) == 'table' then
             stat.BaseClass = nil
         end
@@ -460,71 +479,60 @@ do
         return getmetatable(val) == numberMeta
     end
 
+    local GetProcessedValue = nil
+    ARC9.TestT = ARC9.TestT or {}
+
     function SWEP:GetProcessedValue(val, cachedelay, base, cmd)
-        local swepDt = self.dt
-        -- From now on, we will not call `self:GetJammed()`, `self:GetHeatLockout()`
-        -- and similar functions, because all they do is just return `self.dt[thing]`
-        -- We can (and should, if we want "PERFORMANCE :tm:") do this manually
-        if swepDt.Jammed and val == "Malfunction" then return true end
-        if swepDt.HeatLockout and val == "Overheat" then return true end
-        local ct = CurTime()
-        local upct = UnPredictedCurTime()
+        --ARC9.TestT[val] = (ARC9.TestT[val] or 0) + 1
+
         local processedValueName = tostring(val) .. tostring(base)
         local ticks = engineTickCount()
+        local pvData = ARC9.PV_Data[self]
 
-        -- if CLIENT then -- why cache was client only???
-            if self.PV_Cache[processedValueName] ~= nil and self.PV_Tick >= ticks then
-                return self.PV_Cache[processedValueName]
+        if pvData.PV_Cache[processedValueName] ~= nil and pvData.PV_Tick >= ticks then
+            local predictionActive = not cachedelay and IsValid(GetPredictionPlayer())
+            if (predictionActive) then
+                -- Dont return cached values in prediction or else it will cause prediction errors
+            else
+                return pvData.PV_Cache[processedValueName]
             end
-            if self.PV_Tick < ticks then
-                self.PV_Cache = {}
-            end
-        -- end
+        end
 
+        if pvData.PV_Tick < ticks then
+            pvData.PV_Cache = {}
+        end
 
-        -- mega cool thing to not calculate mostly static values
+        local upct = UnPredictedCurTime()
 
         if cachedelay then
-            if self.PV_CacheLong[processedValueName] then
-                local cachetime = self.PV_CacheLong[processedValueName].time
+            local PV_CacheLong = pvData.PV_CacheLong
+            local pValue = PV_CacheLong[processedValueName]
+
+            if pValue then
+                local cachetime = pValue.time
 
                 if cachetime then
                     if upct > cachetime then
-                        -- print("Renewing cache for - ", processedValueName)
-                        
-
-                        self.PV_CacheLong[processedValueName].time = upct + 60 -- idk whats number here should be
-                        self.PV_CacheLong[processedValueName].value = self:GetProcessedValue(val, base, cmd, false)
-                        
-                -- if istable(self.PV_CacheLong[processedValueName].value) then
-                    -- print("Renewed value is a table!")
-                    -- PrintTable(self.PV_CacheLong[processedValueName].value)
-                    -- else print("Renewed value - ", self.PV_CacheLong[processedValueName].value) end
-                        -- print(processedValueName, "working", upct)
+                        pValue.time = upct + 60 -- idk whats number here should be
+                        pValue.value = GetProcessedValue(self, val, nil, base, cmd, false)
                     end
                 end
             else
-
-                        -- print("Didn't found cache for - ", processedValueName, ", generating!")
-                self.PV_CacheLong[processedValueName] = {}
-                self.PV_CacheLong[processedValueName].time = upct
-                self.PV_CacheLong[processedValueName].value = self:GetProcessedValue(val, base, cmd, false)
-                -- if istable(self.PV_CacheLong[processedValueName].value) then
-                    -- print("That generated value is a table!")
-                    -- PrintTable(self.PV_CacheLong[processedValueName].value)
-                    -- else print("Generated value - ", self.PV_CacheLong[processedValueName].value) end
+                pValue = {}
+                PV_CacheLong[processedValueName] = pValue
+                pValue.time = upct
+                pValue.value = GetProcessedValue(self, val, nil, base, cmd, false)
             end
 
-            return self.PV_CacheLong[processedValueName].value
+            return pValue.value
         end
 
-
+        local swepDt = self.dt
+        local ct = CurTime()
         local stat = arcGetValue(self, val, base)
         local ubgl = swepDt.UBGL
         local owner = entityOwner(self)
-        -- if true then return stat end
         local ownerIsNPC = owner:IsNPC()
-        -- local ownerIsNPC = entityIsNPC(owner)
 
         if ownerIsNPC then
             stat = arcGetValue(self, val, stat, "NPC")
@@ -537,7 +545,7 @@ do
         if not ownerIsNPC and entityIsValid(owner) then
             local ownerOnGround = entityOnGround(owner)
 
-            if not ownerOnGround or entityGetMoveType(owner) == MOVETYPE_NOCLIP then
+            if not ownerOnGround /*or entityGetMoveType(owner) == MOVETYPE_NOCLIP*/ then
                 stat = arcGetValue(self, val, stat, "MidAir")
             end
 
@@ -632,7 +640,7 @@ do
             if hasHeat and base ~= "HeatCapacity" and (not hasNoAffectors[val .. "Hot"] or not hasNoAffectors[val .. "Heated"]) then
 
                 ARC9HeatCapacityGPVOverflow = true
-                local cap = self:GetProcessedValue("HeatCapacity")
+                local cap = GetProcessedValue(self, "HeatCapacity")
                 ARC9HeatCapacityGPVOverflow = false
 
                 if isnumber(stat) then
@@ -688,21 +696,24 @@ do
             end
         end
 
-        if val ~= "RecoilModifierCap" and not hasNoAffectors[val .. "Recoil"] then
-            local recoilAmount = math.min(self:GetProcessedValue("RecoilModifierCap"), swepDt.RecoilAmount)
+        -- Did not seem to do anything to modify any value being fetched?
+        -- if val ~= "RecoilModifierCap" and not hasNoAffectors[val .. "Recoil"] then
+        --     local recoilAmount = math.min(GetProcessedValue(self, "RecoilModifierCap"), swepDt.RecoilAmount)
 
-            if recoilAmount > 0 then
-                stat = arcGetValue(self, val, stat, "Recoil", recoilAmount)
-            end
-        end
+        --     if recoilAmount > 0 then
+        --         print("before", stat)
+        --         stat = arcGetValue(self, val, stat, "Recoil", recoilAmount)
+        --         print("after", stat)
+        --     end
+        -- end
 
         if not hasNoAffectors[val .. "Move"] and IsValid(owner) then
-            local spd = self.PV_Move
+            local spd = pvData.PV_Move
             local maxspd = entityIsPlayer(owner) and playerGetWalkSpeed(owner) or 250
 
-            --if singleplayer or CLIENT or self.PV_Tick ~= upct then
+            --if singleplayer or CLIENT or pvData.PV_Tick ~= upct then
                 spd = math.min(vectorLength(entityGetAbsVelocity(owner)), maxspd) / maxspd
-                self.PV_Move = spd
+                pvData.PV_Move = spd
             --end
 
             if isnumber(stat) then
@@ -715,11 +726,13 @@ do
         end
 
         -- if CLIENT then
-            -- self.PV_Tick = ticks + (ownerIsNPC and engineTickInterval() * 16 or engineTickInterval())
-            self.PV_Tick = ticks + (ownerIsNPC and 16 or 1)
-            self.PV_Cache[processedValueName] = stat
+            -- pvData.PV_Tick = ticks + (ownerIsNPC and engineTickInterval() * 16 or engineTickInterval())
+            pvData.PV_Tick = ticks + (ownerIsNPC and 16 or 1)
+            pvData.PV_Cache[processedValueName] = stat
         -- end
 
         return stat
     end
+
+    GetProcessedValue = SWEP.GetProcessedValue
 end

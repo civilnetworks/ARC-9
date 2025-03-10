@@ -686,7 +686,7 @@ function ARC9.DrawHUD()
             jammed = true
         end
 
-        if weapon:GetProcessedValue("Overheat", true) then
+        if weapon:IsOverheating() then
             showheat = true
             heat = weapon:GetHeatAmount()
             heatcap = weapon:GetProcessedValue("HeatCapacity", true)

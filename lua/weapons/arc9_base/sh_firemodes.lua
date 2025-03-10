@@ -105,22 +105,21 @@ function SWEP:GetCurrentFiremode()
         return self:GetProcessedValue("UBGLFiremode", true)
     end
 
-    mode = self:GetCurrentFiremodeTable().Mode
-
-    mode = self:RunHook("Hook_TranslateMode") or mode
+    local mode = self:RunHook("Hook_TranslateMode") or self:GetCurrentFiremodeTable().Mode
 
     return mode
 end
 
 function SWEP:GetCurrentFiremodeTable()
     local fm = self:GetFiremode()
+    local firemodes = self:GetValue("Firemodes")
 
-    if fm > #self:GetValue("Firemodes") then
+    if fm > #firemodes then
         fm = 1
         self:SetFiremode(fm)
     end
 
-    return self:GetValue("Firemodes")[fm]
+    return firemodes[fm]
 end
 
 function SWEP:ToggleSafety(onoff)
