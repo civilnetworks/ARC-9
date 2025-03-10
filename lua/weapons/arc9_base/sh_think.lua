@@ -72,7 +72,7 @@ function SWEP:Think()
     if not self.NotAWeapon then
         local notPressedAttack = not playerKeyDown(owner, IN_ATTACK)
 
-        if swepGetProcessedValue(self, "TriggerDelay") then
+        if swepGetProcessedValue(self, "TriggerDelay", true) then
             local primedAttack = swepDt.PrimedAttack
             local triggerDelay = swepDt.TriggerDelay
 

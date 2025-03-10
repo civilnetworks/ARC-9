@@ -490,8 +490,14 @@ do
         local pvData = ARC9.PV_Data[self]
 
         if pvData.PV_Cache[processedValueName] ~= nil and pvData.PV_Tick >= ticks then
-            return pvData.PV_Cache[processedValueName]
+            local predictionActive = not cachedelay and IsValid(GetPredictionPlayer())
+            if (predictionActive) then
+                -- Dont return cached values in prediction or else it will cause prediction errors
+            else
+                return pvData.PV_Cache[processedValueName]
+            end
         end
+
         if pvData.PV_Tick < ticks then
             pvData.PV_Cache = {}
         end

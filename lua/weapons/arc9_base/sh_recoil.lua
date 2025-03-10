@@ -182,7 +182,7 @@ do
             MAGIC2 = 210 / tickInterval
         end
 
-        local ft = CLIENT and RealFrameTime() or FrameTime()
+        local ft = FrameTime()
         if ft == 0 then return end -- game is paused
 
         if CLIENT and ft > 0.09 then -- super lag detected, clamping recoil
@@ -243,8 +243,8 @@ do
         entityTbl.SetVisualRecoilAcc(self, new_vac)
         entityTbl.SetVisualRecoilVel(self, vav)
 
-        -- SUBTLE RECOIL MOVEMENT
-        if CLIENT and entityTbl.SubtleVisualRecoil and (entityTbl.GetLastRecoilTime(self) + 0.75 > CurTime()) then
+        -- Disabled due to flawed client only implementation causing prediction errors
+        if false and CLIENT and entityTbl.SubtleVisualRecoil and (entityTbl.GetLastRecoilTime(self) + 0.75 > CurTime()) then
             local springconstant2 = 150 * (entityTbl.SubtleVisualRecoilSpeed or 1) * (isSingleplayer and 1 or math.Clamp(20 / LocalPlayer():Ping(), 0.1, 1))
             local springmagnitude2 = 0.3
             local springdamping2 = 2.8
