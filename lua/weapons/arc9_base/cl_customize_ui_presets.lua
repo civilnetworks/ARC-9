@@ -14,7 +14,7 @@ local nextpreset = 0
 local deadzonex = GetConVar("arc9_hud_deadzonex")
 
 function SWEP:CreatePresetMenu(reload)
-    if GetConVar("arc9_atts_nocustomize"):GetBool() then return end
+    if not ARC9.CanCustomize(self) then return end
     if reload and self.CustomizeHUD and self.CustomizeHUD.presetpanel then self.CustomizeHUD.presetpanel:Remove() end
     if !reload and self.CustomizeHUD and self.CustomizeHUD.presetpanel then self:ClosePresetMenu() return end
 
@@ -152,7 +152,7 @@ function SWEP:CreatePresetMenu(reload)
         presetbtn:DockMargin(0, 0, 5, 5)
         presetbtn:SetText("")
         presetbtn.DoClick = function(self2)
-            if GetConVar("arc9_atts_nocustomize"):GetBool() then return end
+            if not ARC9.CanCustomize(self) then return end
             self:LoadPreset(preset)
             surface.PlaySound(applysound)
         end
@@ -163,7 +163,7 @@ function SWEP:CreatePresetMenu(reload)
             presetbtn.icon = mat_random
             presetbtn.def = true
             presetbtn.DoClick = function(self2)
-                if GetConVar("arc9_atts_nocustomize"):GetBool() then return end
+                if not ARC9.CanCustomize(self) then return end
                 -- self:NPC_Initialize()        
                 net.Start("arc9_randomizeatts")
                 net.SendToServer()
@@ -195,7 +195,7 @@ function SWEP:CreatePresetMenu(reload)
                 if self2:IsDown() then 
                     surface.SetDrawColor(ARC9.GetHUDColor("hi", 100))
                 end
-                if !GetConVar("arc9_atts_nocustomize"):GetBool() then
+                if ARC9.CanCustomize(self) then
                     self.CustomizeHints["customize.hint.select"] = "customize.hint.install"
                 end
                 surface.DrawRect(0, 0, w, h)

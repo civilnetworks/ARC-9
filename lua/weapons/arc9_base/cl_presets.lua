@@ -182,11 +182,10 @@ function SWEP:GetAttCountFromTable(tbl)
     return count
 end
 
-local arc9_atts_nocustomize = GetConVar("arc9_atts_nocustomize")
 local arc9_autosave = GetConVar("arc9_autosave")
 
 function SWEP:LoadPreset(filename)
-    if arc9_atts_nocustomize:GetBool() then return end
+    if (not ARC9.CanCustomize(self)) then return end
     if LocalPlayer() != self:GetOwner() then return end
 
     filename = filename or "autosave"

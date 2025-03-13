@@ -123,8 +123,8 @@ function SWEP:ClientDeploy()
 end
 
 function SWEP:InitialDefaultClip()
-    -- self:SetClip1(self:GetValue("ClipSize"))
-    -- self:GetOwner():GiveAmmo(self:GetValue("ClipSize") * 2, self:GetValue("Ammo"))
+    -- self:SetClip1(self:GetClipSize())
+    -- self:GetOwner():GiveAmmo(self:GetClipSize() * 2, self:GetValue("Ammo"))
 
         -- arccw code winning again
     local ammmmmo = self:GetValue("Ammo")
@@ -135,7 +135,7 @@ function SWEP:InitialDefaultClip()
         if self.ForceDefaultAmmo then
             self:GetOwner():GiveAmmo(self.ForceDefaultAmmo, ammmmmo)
         else
-            self:GetOwner():GiveAmmo(self:GetValue("ClipSize") * GetConVar("arc9_mult_defaultammo"):GetInt(), ammmmmo)
+            self:GetOwner():GiveAmmo(self:GetClipSize() * GetConVar("arc9_mult_defaultammo"):GetInt(), ammmmmo)
         end
     end
 end

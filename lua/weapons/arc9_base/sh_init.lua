@@ -53,7 +53,7 @@ function SWEP:Initialize()
         end)
     end
 
-    self.LastClipSize = self:GetProcessedValue("ClipSize")
+    self.LastClipSize = self:GetClipSize(true)
     self.Primary.Ammo = self:GetProcessedValue("Ammo")
     self.LastAmmo = self.Primary.Ammo
 
@@ -136,7 +136,7 @@ function SWEP:SetBaseSettings()
     self.Primary.Automatic = true
     self.Secondary.Automatic = true
 
-    self.Primary.ClipSize = self:GetValue("ClipSize")
+    self.Primary.ClipSize = self:GetClipSize()
     self.Primary.Ammo = self:GetValue("Ammo")
 
     self.Primary.DefaultClip = self.ForceDefaultClip or self.Primary.ClipSize

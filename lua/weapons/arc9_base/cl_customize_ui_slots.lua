@@ -90,7 +90,7 @@ function SWEP:CreateHUD_Slots(scroll)
                 slotbtn:SetIcon(ms_slot.DefaultIcon)
             elseif ms_slot.Category == "stickers" then
                 slotbtn:SetIcon(mat_stick)
-            elseif GetConVar("arc9_atts_nocustomize"):GetBool() then
+            elseif not ARC9.CanCustomize(self) then
                 slotbtn:SetIcon(mat_dash)
             else
                 slotbtn:SetIcon(mat_plus)

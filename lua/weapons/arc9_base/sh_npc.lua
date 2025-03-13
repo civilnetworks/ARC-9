@@ -104,7 +104,7 @@ function SWEP:NPC_Initialize()
 
     if CLIENT then return end
     
-    self.Primary.DefaultClip = self:GetProcessedValue("ClipSize")
+    self.Primary.DefaultClip = self:GetClipSize(true)
     self:SetClip1(self.ClipSize > 0 and math.max(1, self.Primary.DefaultClip) or self.Primary.DefaultClip)
 
     timer.Simple(0.1, function()
@@ -201,6 +201,6 @@ function SWEP:RollRandomAtts(tree, nofuther)
     end
     
     timer.Simple(0, function() 
-        self:SetClip1(self:GetValue("ClipSize"))
+        self:SetClip1(self:GetClipSize())
     end)
 end

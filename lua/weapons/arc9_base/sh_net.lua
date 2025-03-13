@@ -66,13 +66,12 @@ function SWEP:CountAttsInTree(tree)
     return count
 end
 
-local arc9_atts_nocustomize = GetConVar("arc9_atts_nocustomize")
 local arc9_atts_lock = GetConVar("arc9_atts_lock")
 local arc9_npc_autoreplace = GetConVar("arc9_npc_autoreplace")
 local arc9_replace_spawned = GetConVar("arc9_replace_spawned")
 
 function SWEP:ReceiveWeapon()
-    if SERVER and arc9_atts_nocustomize:GetBool() then return end
+    if (SERVER and not ARC9.CanCustomize(self)) then return end
 
     local tbl = {}
 

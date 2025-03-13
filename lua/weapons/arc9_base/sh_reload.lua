@@ -9,6 +9,15 @@ function SWEP:KillReloadTimer()
     self:SetReloadAmount( 0 )
 end
 
+function SWEP:GetClipSize(processed)
+    local override = hook.Run("ARC9_ClipSizeOverride", self)
+    if isnumber(override) then
+        return override
+    end
+
+    return processed and self:GetProcessedValue("ClipSize") or self:GetValue("ClipSize")
+end
+
 function SWEP:Reload()
     if self:GetOwner():IsNPC() then
         self:NPC_Reload()
@@ -71,6 +80,15 @@ function SWEP:Reload()
     -- self:ScopeToggle(0)
     -- self:ToggleCustomize(false)
 
+    local clipOverride = hook.Run("ARC9_ReloadClipOverride", self, clip)
+    if isnumber(clipOverride) then
+        clip = clipOverride
+
+        if clip == 0 then
+            return
+        end
+    end
+
     if clip == 0 then
         self:SetEmptyReload(true)
     else
@@ -117,7 +135,7 @@ function SWEP:Reload()
         minprogress = math.min(minprogress, 0.95)
 
         if !self:GetAnimationEntry(self:TranslateAnimation(anim)).RestoreAmmo then
-            self:SetReloadTimer( CurTime() + (t * minprogress), self:GetValue(getUBGL and "UBGLClipSize" or "ClipSize") )
+            self:SetReloadTimer( CurTime() + (t * minprogress), getUBGL and self:GetValue("UBGLClipSize") or self:GetClipSize() )
         end
 
         local newcliptime = self:GetAnimationEntry(self:TranslateAnimation(anim)).MagSwapTime or 0.5
@@ -131,7 +149,7 @@ function SWEP:Reload()
                         ammo1 = math.huge
                     end
 
-                    self:SetLoadedRounds(math.min((clip == 0 and self:GetValue("ClipSize") or self:GetCapacity(false)), self:Clip1() + ammo1))
+                    self:SetLoadedRounds(math.min((clip == 0 and self:GetClipSize() or self:GetCapacity(false)), self:Clip1() + ammo1))
                     self:SetLastLoadedRounds(self:GetLoadedRounds())
                 end)
             end
@@ -221,6 +239,7 @@ function SWEP:CancelReload()
 end
 
 function SWEP:DropMagazine()
+    if hook.Run("ARC9_PreventMagazineDrop") == true then return end
     -- if !IsFirstTimePredicted() and !game.SinglePlayer() then return end
 
     local mdl = self:GetProcessedValue("DropMagazineModel", true)
@@ -264,7 +283,7 @@ function SWEP:TakeAmmo(amt)
     else
         if self:GetProcessedValue("BottomlessClip", true) then
             if !self:GetInfiniteAmmo() then
-                self:RestoreClip(self:GetValue("ClipSize"))
+                self:RestoreClip(self:GetClipSize())
 
                 if self:Ammo1() > 0 then
                     local ammotype = self:GetValue("Ammo")
@@ -282,10 +301,15 @@ end
 function SWEP:GetCapacity(ubgl)
     local cap = 0
 
+    local override = hook.Run("ARC9_CapacityOverride", self, ubgl)
+    if isnumber(override) then
+        return override
+    end
+
     if ubgl then
         cap = math.Round(self:GetValue("UBGLClipSize")) + math.Round(self:GetValue("UBGLChamberSize"))
     else
-        cap = math.Round(self:GetValue("ClipSize") or 1) + math.Round(self:GetValue("ChamberSize") or 0)
+        cap = math.Round(self:GetClipSize() or 1) + math.Round(self:GetValue("ChamberSize") or 0)
     end
 
     return cap
@@ -307,17 +331,29 @@ function SWEP:RestoreClip(amt)
         ammo = self:Ammo2()
     end
 
-    -- amt = math.max(amt, -clip)
-
+    local newAmt = clip + amt
     -- clip can be -1 here if defaultclip is being set
     local reserve = inf and math.huge or (math.max(0, clip) + ammo)
+
+    local override, overrideReserve = hook.Run("ARC9_OnReloadingClip", self, amt)
+    if isnumber(override) then
+        newAmt = override
+    elseif (override == false) then
+        return
+    end
+
+    if isnumber(overrideReserve) then
+        reserve = overrideReserve
+    end
+
+    -- amt = math.max(amt, -clip)
 
     local lastclip
 
     if self:GetUBGL() then
         lastclip = self:Clip2()
 
-        self:SetClip2(math.min(math.min(clip + amt, self:GetCapacity(true)), reserve))
+        self:SetClip2(math.min(math.min(newAmt, self:GetCapacity(true)), reserve))
 
         reserve = reserve - self:Clip2()
 
@@ -329,7 +365,7 @@ function SWEP:RestoreClip(amt)
     else
         lastclip = self:Clip1()
 
-        self:SetClip1(math.min(math.min(clip + amt, self:GetCapacity(false)), reserve))
+        self:SetClip1(math.min(math.min(newAmt, self:GetCapacity(false)), reserve))
 
         reserve = reserve - self:Clip1()
 
@@ -386,7 +422,7 @@ function SWEP:EndReload()
         if getUBGL then
             capacity = self:GetProcessedValue("UBGLClipSize")
         else
-            capacity = self:GetProcessedValue("ClipSize")
+            capacity = self:GetClipSize(true)
         end
 
         if !self.ShotgunReloadNoChamber then

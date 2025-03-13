@@ -4,7 +4,7 @@ local v1 = Vector(1, 1, 1)
 function SWEP:DoBodygroups(wm, cm)
     if cm then wm = true end
     local owner = self:GetOwner()
-    
+        
     local isnpc = owner:IsNPC() or self:ShouldLOD() > 0
 
     if !wm and !IsValid(owner) or isnpc then return end
