@@ -1,5 +1,32 @@
 SWEP.CustomizeDelta = 0
 
+local ENTITY = FindMetaTable("Entity")
+local GetOwner = ENTITY.GetOwner
+
+local PLAYER = FindMetaTable("Player")
+local KeyPressed = PLAYER.KeyPressed
+local KeyDown = PLAYER.KeyDown  
+
+local arc9_atts_nocustomize = GetConVar("arc9_atts_nocustomize")
+
+function ARC9.CanCustomize(wep, ply)
+    if (true) then return true end
+    
+    if (not IsValid(wep) or not wep.ARC9) then
+        return false
+    end
+
+    if (not IsValid(ply)) then
+        ply = wep:GetOwner()
+    end
+
+    if (arc9_atts_nocustomize:GetBool()) then
+        return false
+    end
+
+    return true
+end
+
 function SWEP:Attach(addr, att, silent)
     local slottbl = self:LocateSlotFromAddress(addr)
     if !slottbl then -- to not error and reset menu
@@ -140,18 +167,18 @@ function SWEP:PostModify(toggleonly)
             end
 
             timer.Simple(0, function() -- PostModify gets called after each att attached
-                if self.LastAmmo != self:GetValue("Ammo") or self.LastClipSize != self:GetValue("ClipSize") then
+                if self.LastAmmo != self:GetValue("Ammo") or self.LastClipSize != self:GetClipSize() then
                     if self.AlreadyGaveAmmo then
                         self:Unload()
                         self:SetRequestReload(true)
                     else
-                        self:SetClip1(self:GetProcessedValue("ClipSize"))
+                        self:SetClip1(self:GetClipSize(true))
                         self.AlreadyGaveAmmo = true
                     end
                 end
                 
                 self.LastAmmo = self:GetValue("Ammo")
-                self.LastClipSize = self:GetValue("ClipSize")
+                self.LastClipSize = self:GetClipSize()
             end)
 
 
@@ -209,9 +236,9 @@ function SWEP:PostModify(toggleonly)
 end
 
 function SWEP:ThinkCustomize()
-    local owner = self:GetOwner()
+    local owner = GetOwner(self)
 
-    if owner:KeyPressed(ARC9.IN_CUSTOMIZE) and !owner:KeyDown(IN_USE) and !self:GetGrenadePrimed() then
+    if KeyPressed(owner, ARC9.IN_CUSTOMIZE) and !KeyDown(owner, IN_USE) and !self:GetGrenadePrimed() then
         self:ToggleCustomize(!self:GetCustomize())
     end
 
@@ -524,13 +551,11 @@ function SWEP:GetSlotMissingDependents(addr, att, slottbl)
     return self.DependentCache[addr][att][2]
 end
 
-local arc9_atts_nocustomize = GetConVar("arc9_atts_nocustomize")
-
 function SWEP:CanAttach(addr, att, slottbl, ignorecount)
     if ARC9.Blacklist[att] then return false end
 
-    if arc9_atts_anarchy:GetBool() then return true end
-    if arc9_atts_nocustomize:GetBool() then return false end
+    -- if arc9_atts_anarchy:GetBool() then return true end
+    if (not ARC9.CanCustomize(self)) then return false end
 
     local atttbl = ARC9.GetAttTable(att)
     local invatt = atttbl.InvAtt or att
@@ -596,7 +621,7 @@ function SWEP:CanAttach(addr, att, slottbl, ignorecount)
 end
 
 function SWEP:CanDetach(addr)
-    if arc9_atts_nocustomize:GetBool() then return false end
+    if (not ARC9.CanCustomize(self)) then return false end
 
     local slottbl = self:LocateSlotFromAddress(addr)
 

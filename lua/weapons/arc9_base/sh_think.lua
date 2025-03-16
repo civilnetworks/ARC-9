@@ -65,15 +65,18 @@ function SWEP:Think()
 
     local shouldRunPredicted = not self:PredictionFilter()
 
+    -- TODO: More accurate time until dormant
+    local isDormant = CurTime() - self.LastPrimaryAttack > 4
+    local isDormantADS = CurTime() - self.LastScopedOutTime > 1
+
     if not self.NotAWeapon then
         local notPressedAttack = not playerKeyDown(owner, IN_ATTACK)
 
-        if swepGetProcessedValue(self, "TriggerDelay") then
+        if swepGetProcessedValue(self, "TriggerDelay", true) then
             local primedAttack = swepDt.PrimedAttack
             local triggerDelay = swepDt.TriggerDelay
-            local releasetofire = swepGetProcessedValue(self, "TriggerDelayReleaseToFire", true)
 
-            if primedAttack and triggerDelay <= now and releasetofire and playerKeyReleased(owner, IN_ATTACK) and shouldRunPredicted then
+            if primedAttack and triggerDelay <= now and playerKeyReleased(owner, IN_ATTACK) and shouldRunPredicted and swepGetProcessedValue(self, "TriggerDelayReleaseToFire", true) then
                 swepPrimaryAttack(self)
             elseif (primedAttack or triggerDelay > now) and playerKeyReleased(owner, IN_ATTACK) then
                 swepPlayAnimation(self, "untrigger")
@@ -88,14 +91,19 @@ function SWEP:Think()
             end
         end
 
-        local currentFiremode = swepGetCurrentFiremode(self)
+        local currentFiremode = nil
         local notRunawayBurst = not swepGetProcessedValue(self, "RunawayBurst", true)
-        local postBurstDelay = now + swepGetProcessedValue(self, "PostBurstDelay")
+        local postBurstDelay = nil
 
         if notPressedAttack then
             self:SetNeedTriggerPress(false)
-            if currentFiremode > 1 and notRunawayBurst and swepDt.BurstCount > 0 then
-                weaponSetNextPrimaryFire(self, postBurstDelay)
+            if notRunawayBurst and swepDt.BurstCount > 0 then
+                currentFiremode = swepGetCurrentFiremode(self)
+
+                if (currentFiremode > 1) then
+                    postBurstDelay = now + swepGetProcessedValue(self, "PostBurstDelay")
+                    weaponSetNextPrimaryFire(self, postBurstDelay)
+                end
             end
             if notRunawayBurst then
                 self:SetBurstCount(0)
@@ -104,9 +112,18 @@ function SWEP:Think()
 
         -- :troll:
         if not notRunawayBurst then
+            if (currentFiremode == nil) then
+                currentFiremode = swepGetCurrentFiremode(self)
+            end
+            
             local burstCount = swepDt.BurstCount
             if burstCount >= currentFiremode and currentFiremode > 0 then
                 self:SetBurstCount(0)
+
+                if (postBurstDelay == nil) then
+                    postBurstDelay = now + swepGetProcessedValue(self, "PostBurstDelay")
+                end
+                
                 weaponSetNextPrimaryFire(self, postBurstDelay)
             elseif burstCount > 0 and burstCount < currentFiremode then
                 swepDoPrimaryAttack(self)
@@ -162,14 +179,19 @@ function SWEP:Think()
             self:ThinkGrenade()
             self:ThinkTriggerSounds()
         end
-        -- Done
-        self:ThinkRecoil()
-        self:ThinkHoldBreath()
-        self:ThinkLockOn()
+        
+        if (not isDormant) then
+            self:ThinkRecoil()
+        end
+
+        if (not isDormantADS) then
+            self:ThinkHoldBreath()
+            --self:ThinkLockOn()
+        end
     end
 
     if shouldRunPredicted then
-        swepThinkLean(self)
+        -- swepThinkLean(self)
         swepThinkFiremodes(self)
         swepThinkInspect(self)
     end

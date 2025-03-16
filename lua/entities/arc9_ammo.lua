@@ -69,7 +69,7 @@ function ENT:ApplyAmmo(ply)
 
     if wpn.ARC9 then
         ammotype = wpn:GetProcessedValue("Ammo")
-        clipsize = wpn:GetProcessedValue("ClipSize")
+        clipsize = wpn:GetClipSize(true)
         max = wpn:GetProcessedValue("SupplyLimit") * clipsize
 
         if max <= 0 then

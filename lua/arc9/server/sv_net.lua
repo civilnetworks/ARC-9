@@ -30,7 +30,6 @@ net.Receive("arc9_togglecustomize", function(len, ply)
     wpn:ToggleCustomize(bf)
 end)
 
-local arc9_atts_nocustomize = GetConVar("arc9_atts_nocustomize")
 local arc9_free_atts = GetConVar("arc9_free_atts")
 
 net.Receive("arc9_networkweapon", function(len, ply)
@@ -38,7 +37,7 @@ net.Receive("arc9_networkweapon", function(len, ply)
 
     if !wpn.ARC9 then return end
 
-    if arc9_atts_nocustomize:GetBool() then return end
+    if not ARC9.CanCustomize(wpn) then return end
 
     wpn:ReceiveWeapon()
 end)

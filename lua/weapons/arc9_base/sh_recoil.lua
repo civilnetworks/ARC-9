@@ -177,11 +177,12 @@ do
         local MAGIC1 = 210
         local MAGIC2 = 210
         if weirdfix then
-            MAGIC1 = 210 / (engine.TickInterval() / 0.015)
-            MAGIC2 = 210 / (engine.TickInterval() / 0.015)
+            local tickInterval = engine.TickInterval() / 0.015
+            MAGIC1 = 210 / tickInterval
+            MAGIC2 = 210 / tickInterval
         end
 
-        local ft = CLIENT and RealFrameTime() or FrameTime()
+        local ft = FrameTime()
         if ft == 0 then return end -- game is paused
 
         if CLIENT and ft > 0.09 then -- super lag detected, clamping recoil
@@ -189,21 +190,23 @@ do
             MAGIC2 = 0.1
         end
         
+        local entityTbl = self:GetTable()
         local springconstant = swepGetProcessedValue(self, "VisualRecoilDampingConst", true) or 120
         local springmagnitude = swepGetProcessedValue(self, "VisualRecoilSpringMagnitude", true) or 1
         local springdamping = swepGetProcessedValue(self, "VisualRecoilSpringPunchDamping", true) or 6
 
-        if self.VisualRecoilThinkFunc then
-            springconstant, springmagnitude, springdamping = self.VisualRecoilThinkFunc(springconstant, springmagnitude, springdamping, self:GetRecoilAmount())
+        if entityTbl.VisualRecoilThinkFunc then
+            springconstant, springmagnitude, springdamping = entityTbl.VisualRecoilThinkFunc(springconstant, springmagnitude, springdamping, entityTbl.GetRecoilAmount(self))
         end
 
-        local vpa = self:GetVisualRecoilPos()
-        local vpv = self:GetVisualRecoilPosVel()
-        local vpc = self:GetVisualRecoilPosAcc()
+        local vpa = entityTbl.GetVisualRecoilPos(self)
+        local vpv = entityTbl.GetVisualRecoilPosVel(self)
+        local vpc = entityTbl.GetVisualRecoilPosAcc(self)
+        local vpaLen = vpa:Length()
 
         vpa = vpa + (vpv * ft) + (vpc * ft * ft * 0.5)
         local vpdrag = -(vpv * vpv:Length() * 0.5)
-        local vpreturn = (-vpa * vpa:Length() * springconstant) + (-vpa / vpa:Length() * springmagnitude) + (-vpv * springdamping)
+        local vpreturn = (-vpa * vpaLen * springconstant) + (-vpa / vpaLen * springmagnitude) + (-vpv * springdamping)
         local new_vpc = vpdrag + vpreturn
         vpv = vpv + ((vpc + new_vpc) * (ft * 0.5))
 
@@ -213,19 +216,20 @@ do
             new_vpc[i] = math_Clamp(new_vpc[i], -MAGIC1, MAGIC1)
         end
 
-        self:SetVisualRecoilPos(vpa)
-        self:SetVisualRecoilPosAcc(new_vpc)
-        self:SetVisualRecoilPosVel(vpv)
+        entityTbl.SetVisualRecoilPos(self, vpa)
+        entityTbl.SetVisualRecoilPosAcc(self, new_vpc)
+        entityTbl.SetVisualRecoilPosVel(self, vpv)
 
         -- New spring algorithm using the velocity Verlet integration
 
-        local vaa = self:GetVisualRecoilAng()
-        local vav = self:GetVisualRecoilVel()
-        local vac = self:GetVisualRecoilAcc()
+        local vaa = entityTbl.GetVisualRecoilAng(self)
+        local vav = entityTbl.GetVisualRecoilVel(self)
+        local vac = entityTbl.GetVisualRecoilAcc(self)
+        local vaaLen = vaa:Length()
 
         vaa = vaa + (vav * ft) + (vac * ft * ft * 0.5)
         local vdrag = -(vav * vav:Length() * 0.5)
-        local vreturn = (-vaa * vaa:Length() * springconstant) + (-vaa / vaa:Length() * springmagnitude) + (-vav * springdamping)
+        local vreturn = (-vaa * vaaLen * springconstant) + (-vaa / vaaLen * springmagnitude) + (-vav * springdamping)
         local new_vac = vdrag + vreturn
         vav = vav + ((vac + new_vac) * (ft * 0.5))
 
@@ -235,16 +239,13 @@ do
             new_vac[i] = math_Clamp(new_vac[i], -MAGIC2, MAGIC2)
         end
 
-        self:SetVisualRecoilAng(vaa)
-        self:SetVisualRecoilAcc(new_vac)
-        self:SetVisualRecoilVel(vav)
+        entityTbl.SetVisualRecoilAng(self, vaa)
+        entityTbl.SetVisualRecoilAcc(self, new_vac)
+        entityTbl.SetVisualRecoilVel(self, vav)
 
-
-
-
-        -- SUBTLE RECOIL MOVEMENT
-        if CLIENT and self.SubtleVisualRecoil and (self:GetLastRecoilTime() + 0.75 > CurTime()) then
-            local springconstant2 = 150 * (self.SubtleVisualRecoilSpeed or 1) * (isSingleplayer and 1 or math.Clamp(20 / LocalPlayer():Ping(), 0.1, 1))
+        -- Disabled due to flawed client only implementation causing prediction errors
+        if false and CLIENT and entityTbl.SubtleVisualRecoil and (entityTbl.GetLastRecoilTime(self) + 0.75 > CurTime()) then
+            local springconstant2 = 150 * (entityTbl.SubtleVisualRecoilSpeed or 1) * (isSingleplayer and 1 or math.Clamp(20 / LocalPlayer():Ping(), 0.1, 1))
             local springmagnitude2 = 0.3
             local springdamping2 = 2.8
     
@@ -252,9 +253,9 @@ do
             --     springconstant2, springmagnitude2, springdamping2 = self.VisualRecoilThinkFunc(springconstant2, springmagnitude2, springdamping2, self:GetRecoilAmount())
             -- end
     
-            local vpa2 = self.SubtleVisualRecoilPos
-            local vpv2 = self.SubtleVisualRecoilPosVel
-            local vpc2 = self.SubtleVisualRecoilPosAcc
+            local vpa2 = entityTbl.SubtleVisualRecoilPos
+            local vpv2 = entityTbl.SubtleVisualRecoilPosVel
+            local vpc2 = entityTbl.SubtleVisualRecoilPosAcc
     
             vpa2 = vpa2 + (vpv2 * ft) + (vpc2 * ft * ft * 0.5)
             local vpdrag2 = -(vpv2 * vpv2:Length() * 0.5)
@@ -268,15 +269,15 @@ do
                 new_vpc2[i] = math_Clamp(new_vpc2[i], -MAGIC1, MAGIC1)
             end
     
-            self.SubtleVisualRecoilPos = vpa2
-            self.SubtleVisualRecoilPosAcc = new_vpc2
-            self.SubtleVisualRecoilPosVel = vpv2
+            entityTbl.SubtleVisualRecoilPos = vpa2
+            entityTbl.SubtleVisualRecoilPosAcc = new_vpc2
+            entityTbl.SubtleVisualRecoilPosVel = vpv2
     
             -- New spring algorithm using the velocity Verlet integration
     
-            local vaa2 = self.SubtleVisualRecoilAng
-            local vav2 = self.SubtleVisualRecoilVel
-            local vac2 = self.SubtleVisualRecoilAcc
+            local vaa2 = entityTbl.SubtleVisualRecoilAng
+            local vav2 = entityTbl.SubtleVisualRecoilVel
+            local vac2 = entityTbl.SubtleVisualRecoilAcc
 
             vaa2 = vaa2 + (vav2 * ft) + (vac2 * ft * ft * 0.5)
             local vdrag2 = -(vav2 * vav2:Length() * 0.5)
@@ -290,17 +291,17 @@ do
                 new_vac2[i] = math_Clamp(new_vac2[i], -MAGIC2, MAGIC2)
             end
             
-            self.SubtleVisualRecoilAng = vaa2
-            self.SubtleVisualRecoilAcc = new_vac2
-            self.SubtleVisualRecoilVel = vav2
+            entityTbl.SubtleVisualRecoilAng = vaa2
+            entityTbl.SubtleVisualRecoilAcc = new_vac2
+            entityTbl.SubtleVisualRecoilVel = vav2
 
-            self:SetVisualRecoilPos(vpa + vpa2)
-            self:SetVisualRecoilPosAcc(new_vpc + new_vpc2)
-            self:SetVisualRecoilPosVel(vpv + vpv2)
+            entityTbl.SetVisualRecoilPos(self, vpa + vpa2)
+            entityTbl.SetVisualRecoilPosAcc(self, new_vpc + new_vpc2)
+            entityTbl.SetVisualRecoilPosVel(self, vpv + vpv2)
 
-            self:SetVisualRecoilAng(vaa + vaa2)
-            self:SetVisualRecoilAcc(new_vac + new_vac2)
-            self:SetVisualRecoilVel(vav + vav2)
+            entityTbl.SetVisualRecoilAng(self, vaa + vaa2)
+            entityTbl.SetVisualRecoilAcc(self, new_vac + new_vac2)
+            entityTbl.SetVisualRecoilVel(self, vav + vav2)
         end
     end
 end
@@ -312,14 +313,15 @@ do
     local smolnumber = 1e-5
 
     function SWEP:ThinkRecoil()
-        local ru = self.dt.RecoilUp
-        local rs = self.dt.RecoilSide
+        local dt = self.dt
+        local ru = dt.RecoilUp
+        local rs = dt.RecoilSide
 
         swepGetProcessedValue = swepGetProcessedValue or self.GetProcessedValue
 
 		swepThinkVisualRecoil(self)
 
-        if math.abs(ru) < smolnumber and math.abs(rs) < smolnumber and self.dt.RecoilAmount == 0 then return end
+        if math.abs(ru) < smolnumber and math.abs(rs) < smolnumber and dt.RecoilAmount == 0 then return end
 
         local rdr = swepGetProcessedValue(self, "RecoilDissipationRate", true)
         local ct = CurTime()
@@ -327,7 +329,7 @@ do
 
         if (weaponGetNextPrimaryFire(self) + swepGetProcessedValue(self, "RecoilResetTime", true)) < ct then
             -- as soon as dissipation kicks in, recoil is clamped to the modifer cap; this is to not break visual recoil
-            self:SetRecoilAmount(math.Clamp(self.dt.RecoilAmount - (ft * rdr), 0, swepGetProcessedValue(self, "UseVisualRecoil", true) and math.huge or swepGetProcessedValue(self, "RecoilModifierCap")))
+            self:SetRecoilAmount(math.Clamp(dt.RecoilAmount - (ft * rdr), 0, swepGetProcessedValue(self, "UseVisualRecoil", true) and math.huge or swepGetProcessedValue(self, "RecoilModifierCap")))
             if weaponGetNextPrimaryFire(self) + swepGetProcessedValue(self, "RecoilFullResetTime", true) < ct then
                 self:SetRecoilAmount(0)
             end
@@ -341,7 +343,6 @@ do
             self:SetRecoilUp(new_ru)
             self:SetRecoilSide(new_rs)
         end
-
     end
 end
 

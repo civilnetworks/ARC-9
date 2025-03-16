@@ -8,6 +8,10 @@ local arc9_precache_wepmodels_onfirsttake = GetConVar("arc9_precache_wepmodels_o
 local arc9_precache_attsmodels_onfirsttake = GetConVar("arc9_precache_attsmodels_onfirsttake")
 
 function SWEP:Initialize()
+    self:PV_Initialize()
+    self.LastPrimaryAttack = 0
+    self.LastScopedOutTime = 0
+    
     local owner = self:GetOwner()
 
     self.HoldTypeDefault = self.HoldType
@@ -49,7 +53,7 @@ function SWEP:Initialize()
         end)
     end
 
-    self.LastClipSize = self:GetProcessedValue("ClipSize")
+    self.LastClipSize = self:GetClipSize(true)
     self.Primary.Ammo = self:GetProcessedValue("Ammo")
     self.LastAmmo = self.Primary.Ammo
 
@@ -132,7 +136,7 @@ function SWEP:SetBaseSettings()
     self.Primary.Automatic = true
     self.Secondary.Automatic = true
 
-    self.Primary.ClipSize = self:GetValue("ClipSize")
+    self.Primary.ClipSize = self:GetClipSize()
     self.Primary.Ammo = self:GetValue("Ammo")
 
     self.Primary.DefaultClip = self.ForceDefaultClip or self.Primary.ClipSize
@@ -225,4 +229,6 @@ function SWEP:OnRemove()
     if SERVER then
         self:KillShield()
     end
+
+    self:PV_Remove()
 end

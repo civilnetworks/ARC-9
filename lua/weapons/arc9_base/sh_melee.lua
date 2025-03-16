@@ -1,3 +1,7 @@
+
+local ENTITY = FindMetaTable("Entity")
+local GetOwner = ENTITY.GetOwner
+
 local bodyDamageCancel = GetConVar("arc9_mod_bodydamagecancel")
 local cancelmults = ARC9.CancelMultipliers[engine.ActiveGamemode()] or ARC9.CancelMultipliers[1]
 
@@ -23,7 +27,7 @@ function SWEP:MeleeAttack(bypass, bash2)
 
     self:PlayTranslatedSound(soundtab1)
 
-    local owner = self:GetOwner()
+    local owner = GetOwner(self)
     local backstab = false
 
     local prefix = "Bash"
@@ -102,7 +106,7 @@ end
 local vmaxs2, vmins2 = Vector(2, 2, 2), Vector(-2, -2, -2)
 
 function SWEP:MeleeAttackShoot(bash2, backstab)
-    local owner = self:GetOwner()
+    local owner = GetOwner(self)
 
     local prefix = "Bash"
 
@@ -206,7 +210,7 @@ local PlayerKeyDown = FindMetaTable("Player").KeyDown
 
 function SWEP:ThinkMelee()
 	-- if self:StillWaiting() then return end
-	local owner = self:GetOwner()
+	local owner = GetOwner(self)
 	local m1 = PlayerKeyDown(owner, IN_ATTACK)
 	local m2 = PlayerKeyDown(owner, IN_ATTACK2)
 	local marc = owner:KeyPressed(ARC9.IN_MELEE)

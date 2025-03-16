@@ -180,7 +180,7 @@ function SWEP:CreateHUD_Stats()
             stat = "ClipSize",
             fifty = 20,
             eval = function()
-                local a = self:GetProcessedValue("ClipSize") + self:GetProcessedValue("ChamberSize")
+                local a = self:GetClipSize(true) + self:GetProcessedValue("ChamberSize")
                 if self:GetProcessedValue("BottomlessClip", true) then
                     a = a + math.huge
                 end

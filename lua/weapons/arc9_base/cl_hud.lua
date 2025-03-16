@@ -476,7 +476,7 @@ function SWEP:DrawHUD()
     end
 			
 	if jamcom:GetBool() and self:GetJammed() and not self:StillWaiting() then -- If weapon is Jammed
-        if !self:GetProcessedValue("Overheat", true) then -- overheat makes guns auto unjam so hint is useless
+        if !self:IsOverheating() then -- overheat makes guns auto unjam so hint is useless
             local textunjam = ARC9:GetPhrase("hud.hint.unjam")
             local twunjam = surface.GetTextSize(textunjam)
             
@@ -503,7 +503,7 @@ function SWEP:DrawHUD()
 local cvo = GetConVar("arc9_center_overheat"):GetBool()
 local ah = GetConVar("arc9_hud_arc9"):GetBool()
 
-	if cvo and !ah and self:GetProcessedValue("Overheat", true) then
+	if cvo and !ah and self:IsOverheating() then
 		local heat = self:GetHeatAmount()
 		local heatcap = self:GetProcessedValue("HeatCapacity", true)
 		local heatlocked = self:GetHeatLockout()

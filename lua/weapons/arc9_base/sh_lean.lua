@@ -6,6 +6,10 @@ SWEP.LastLeanAmountSERVER = 0
 local leanconvar = GetConVar("arc9_lean")
 
 function SWEP:ThinkLean()
+    if (true) then
+        return
+    end
+    
     if !leanconvar:GetBool() or !self:GetProcessedValue("CanLean", true) then
         self:SetLeanAmount(0)
         return
